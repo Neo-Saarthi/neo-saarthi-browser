@@ -45,36 +45,21 @@ Task context and images can be sent to JEV and DeepSeek through the configured p
 
 ```text
 run.py               App and local bridge startup
-test.py              Local regression runner
 companion/           App API, encrypted settings and runtime
 backend/             Browser engine, JEV, recipes, bridge and storage
 ui/                  Browser task interface
-tests/               Local regressions and synthetic fixtures
-tools/               Verification tools
+tools/               Repository credential check
 requirements.txt     Python dependencies
 .env.example         Settings template without credentials
 data/                Private local settings and runtime data; ignored
 ```
 
-## Verification
+## Repository hygiene
+
+Never commit `.env`, `data/`, `.venv/`, browser profiles, logs or test artifacts. Share `.env.example` without secrets. Before committing changes, run:
 
 ```powershell
-.\.venv\Scripts\python.exe -m playwright install chromium
-.\.venv\Scripts\python.exe test.py
+.\.venv\Scripts\python.exe tools\check_repository.py
 ```
 
-Extension DOM tests require a separately supplied package; otherwise they are explicitly skipped:
-
-```powershell
-.\.venv\Scripts\python.exe test.py --extension-package "C:\path\to\extension.zip"
-.\.venv\Scripts\python.exe tools\pairing_test.py --extension-package "C:\path\to\extension.zip"
-.\.venv\Scripts\python.exe tools\live_test.py --extension-package "C:\path\to\extension.zip"
-```
-
-Pairing tests run without model tasks. Live task tests use synthetic local pages, require model access and move the real mouse. Neither test visits financial portals. Test tools temporarily extract the supplied package and add the public Store key to that temporary manifest when needed for the correct unpacked ID. The supplied package stays unchanged.
-
-Never commit `.env`, `data/`, `.venv/`, browser profiles, logs or test artifacts. Share `.env.example` without secrets. Run `tools/check_repository.py` before staging files. That check does not create a remote, commit or push. The owner's licensing decision remains pending.
-
-Technical verification and source provenance are recorded in `TEST_RESULTS.md` and `provenance.json`.
-
-Chrome Web Store reviewers: see [reviewer instructions](CHROME_WEB_STORE_REVIEWER_INSTRUCTIONS.md) for the separate review setup and safe demonstration.
+The owner has not yet selected a distribution license.
