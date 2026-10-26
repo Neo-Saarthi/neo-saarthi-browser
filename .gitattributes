@@ -1,0 +1,4 @@
+* text=auto
+backend/** -text
+*.png binary
+*.cur binary

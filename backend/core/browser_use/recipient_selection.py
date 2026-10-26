@@ -1,0 +1,2 @@
+class RecipientSelectionError(RuntimeError):
+    pass

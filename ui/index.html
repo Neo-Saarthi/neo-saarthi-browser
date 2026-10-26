@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Browser companion Â· Neo Saarthi</title><link rel="stylesheet" href="/static/app.css"><script src="/static/app.js" defer></script></head>
+<body>
+<header><a class="brand" href="/">Neo Saarthi <span>Browser</span></a><button id="settings-toggle" aria-expanded="false" aria-controls="settings">Settings</button></header>
+<main>
+<section class="intro"><h1>What would you like to do?</h1><p>Connect your browser, then describe the task. Keep the browser visible while it works.</p></section>
+<div id="notice" role="status" aria-live="polite" hidden></div>
+<section id="settings" class="panel settings" hidden aria-labelledby="settings-title">
+<div class="section-head"><h2 id="settings-title">Local settings</h2><button id="settings-close" aria-label="Close settings">Close</button></div>
+<p>Values are encrypted on this computer and never shown again. Leave a field blank to keep its saved value.</p>
+<form id="settings-form" autocomplete="off"><div class="fields">
+<label>OpenCode API key <span id="key-state"></span><input name="opencode_api_key" type="password" autocomplete="new-password" placeholder="Required for JEV and DeepSeek"></label>
+<label>CAMS registered email <span data-configured="cams_email"></span><input name="cams_email" type="email" autocomplete="off"></label>
+<label>Karvy username <span data-configured="karvy_username"></span><input name="karvy_username" autocomplete="off"></label>
+<label>Karvy password <span data-configured="karvy_password"></span><input name="karvy_password" type="password" autocomplete="new-password"></label>
+<label>Report extraction password <span data-configured="report_password"></span><input name="report_password" type="password" autocomplete="new-password"></label>
+</div><div class="buttons"><button type="submit" class="primary">Save settings</button><button type="button" id="clear-settings">Clear saved values</button></div></form>
+<p class="small">Saved-password entry requires Windows and your separate approval in the extension. Website credentials are used only when you select their profile for a task.</p>
+</section>
+<div class="workspace">
+<section class="panel task-panel" aria-labelledby="task-title"><h2 id="task-title">Task</h2>
+<form id="task-form"><label class="sr-only" for="goal">Describe your task</label><textarea id="goal" required maxlength="16000" placeholder="For example: open example.com and tell me the page title."></textarea>
+<div class="task-options"><label>Saved credentials<select id="profile"><option value="none">None â€” everyday task</option><option value="cams">CAMS</option><option value="karvy">Karvy</option></select></label><label class="budget">Step limit<input id="budget" type="number" value="35" min="1" max="200" required></label></div>
+<div class="buttons"><button id="run" type="submit" class="primary" disabled>Run task</button><button id="pause" type="button" disabled>Pause</button><button id="resume" type="button" disabled>Resume</button></div></form>
+<p class="small">Use Settings for passwords, rather than typing them into a task. Paused tasks retain their context for up to five minutes while this app stays running.</p>
+<div class="result-head"><h2>Result</h2><span id="task-state">No task yet</span></div><pre id="result" aria-live="polite">Results will appear here.</pre>
+</section>
+<aside class="panel connection" aria-labelledby="connection-title"><div class="section-head"><h2 id="connection-title">Browser connection</h2><span id="connection-state">Checking</span></div>
+<label>Browser profile<select id="browser"><option value="">No paired browser</option></select></label><button id="revoke" disabled>Disconnect this browser</button>
+<hr><h3>Pair a browser</h3><ol><li>Open the Neo Saarthi extension in Chrome or Edge.</li><li>Review its data disclosure and website permissions.</li><li>Generate a code here and enter it in the extension.</li></ol>
+<button id="pair">Generate pairing code</button><div id="pairing" hidden><output id="pairing-code"></output><button id="copy-code">Copy code</button><p id="pairing-expiry" class="small"></p></div>
+<hr><p class="small">Decisions: JEV<br>Text &amp; vision: DeepSeek V4.1 Flash<br>Connection: this computer only</p></aside>
+</div>
+<section class="panel activity" aria-labelledby="activity-title"><div class="section-head"><h2 id="activity-title">Activity</h2><span class="small">Latest task log</span></div><pre id="logs">No activity yet.</pre></section>
+<footer>Local browser companion Â· No application login Â· Keep this window and the companion process running.</footer>
+</main></body></html>
