@@ -4,7 +4,7 @@
 <body>
 <header><a class="brand" href="/">Neo Saarthi <span>Browser</span></a><button id="settings-toggle" aria-expanded="false" aria-controls="settings">Settings</button></header>
 <main>
-<section class="intro"><h1>What would you like to do?</h1><p>Connect your browser, then describe the task. Keep the browser visible while it works.</p></section>
+<section class="intro"><h1>What would you like to do?</h1><p>Your extension connects automatically. Describe the task. Keep the browser visible while it works.</p></section>
 <div id="notice" role="status" aria-live="polite" hidden></div>
 <section id="settings" class="panel settings" hidden aria-labelledby="settings-title">
 <div class="section-head"><h2 id="settings-title">Local settings</h2><button id="settings-close" aria-label="Close settings">Close</button></div>
@@ -15,8 +15,8 @@
 <label>Karvy username <span data-configured="karvy_username"></span><input name="karvy_username" autocomplete="off"></label>
 <label>Karvy password <span data-configured="karvy_password"></span><input name="karvy_password" type="password" autocomplete="new-password"></label>
 <label>Report extraction password <span data-configured="report_password"></span><input name="report_password" type="password" autocomplete="new-password"></label>
-</div><div class="buttons"><button type="submit" class="primary">Save settings</button><button type="button" id="clear-settings">Clear saved values</button></div></form>
-<p class="small">Saved-password entry requires Windows and your separate approval in the extension. Website credentials are used only when you select their profile for a task.</p>
+</div><label class="consent"><input id="password-consent" type="checkbox"> Allow saved-password entry for my requested CAMS/KFintech tasks.</label><p class="small">Windows enters saved login and report passwords only into verified supported HTTPS fields. Values are sent to the intended website, not to the AI or extension. This does not approve report submission. Uncheck and save to revoke access.</p><div class="buttons"><button type="submit" class="primary">Save settings</button><button type="button" id="clear-settings">Clear saved values</button></div></form>
+<p class="small">Saved-password entry requires Windows and your approval here. Website credentials are used only when you select their profile for a task.</p>
 </section>
 <div class="workspace">
 <section class="panel task-panel" aria-labelledby="task-title"><h2 id="task-title">Task</h2>
@@ -27,9 +27,8 @@
 <div class="result-head"><h2>Result</h2><span id="task-state">No task yet</span></div><pre id="result" aria-live="polite">Results will appear here.</pre>
 </section>
 <aside class="panel connection" aria-labelledby="connection-title"><div class="section-head"><h2 id="connection-title">Browser connection</h2><span id="connection-state">Checking</span></div>
-<label>Browser profile<select id="browser"><option value="">No paired browser</option></select></label><button id="revoke" disabled>Disconnect this browser</button>
-<hr><h3>Pair a browser</h3><ol><li>Open the Neo Saarthi extension in Chrome or Edge.</li><li>Review its data disclosure and website permissions.</li><li>Generate a code here and enter it in the extension.</li></ol>
-<button id="pair">Generate pairing code</button><div id="pairing" hidden><output id="pairing-code"></output><button id="copy-code">Copy code</button><p id="pairing-expiry" class="small"></p></div>
+<label id="browser-choice" hidden>Browser profile<select id="browser"><option value="">No connected browser</option></select></label><button id="connection-toggle">Disconnect browsers</button>
+<p class="small">Install the Neo Saarthi extension, accept its data disclosure, and keep this app running. Connection is automatic on this Windows account.</p>
 <hr><p class="small">Decisions: JEV<br>Text &amp; vision: DeepSeek V4.1 Flash<br>Connection: this computer only</p></aside>
 </div>
 <section class="panel activity" aria-labelledby="activity-title"><div class="section-head"><h2 id="activity-title">Activity</h2><span class="small">Latest task log</span></div><pre id="logs">No activity yet.</pre></section>

@@ -17,7 +17,7 @@ OWNER = "local-browser-owner"
 SESSION = secrets.token_urlsafe(32)
 SETTINGS_LOCK = threading.RLock()
 SETTING_NAMES = {
-    "opencode_api_key", "cams_email", "karvy_username", "karvy_password", "report_password"
+    "opencode_api_key", "cams_email", "karvy_username", "karvy_password", "report_password", "saved_password_entry", "browser_auto_connect"
 }
 
 
@@ -90,6 +90,8 @@ def settings_status() -> Dict[str, Any]:
     values = read_settings()
     return {
         "configured": {name: bool(values.get(name)) for name in sorted(SETTING_NAMES)},
+        "password_entry_enabled": values.get("saved_password_entry") == "enabled",
+        "auto_connect_enabled": values.get("browser_auto_connect") != "disabled",
         "model_key_available": bool(values.get("opencode_api_key") or os.environ.get("OPENCODE_API_KEY")),
         "secret_entry_platform": sys.platform == "win32",
     }

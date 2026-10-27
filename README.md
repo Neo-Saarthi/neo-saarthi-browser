@@ -21,19 +21,17 @@ Open **http://127.0.0.1:8000**. Save your API key in Settings, or use a local `.
 
 ## Connect your browser
 
-1. Open the Neo Saarthi extension and review its data disclosure.
-2. Click **Generate pairing code** in the app.
-3. Enter the code in the extension and connect. Codes expire after ten minutes and work once.
-4. Approve the website access you need in the extension.
-5. Enter a task and click **Run task**. Keep the browser visible and avoid other mouse or keyboard activity during native input.
+Install the Neo Saarthi extension and accept its first-use data disclosure. Chrome asks for HTTPS website access during installation. With this app running, the extension connects automatically; there is no pairing code or separate HTTPS button.
 
-The extension is installed separately. This repository does not bundle a second extension. The app listens only on this computer and requires no application account. A local session token protects app requests; extension connections require pairing.
+The app registers a Windows native messaging helper for the official Store ID in your user account. Only that extension can use the helper. The helper authenticates to this app using a per-launch secret encrypted locally; the ordinary HTTP auto-connect endpoint remains disabled. No administrator access is required. If your organization blocks native messaging, setup must be permitted by your administrator.
 
-Use **Pause** and **Resume** in the app. If you pause in the extension popup, resume there. Task context is retained for up to five minutes while the process stays running; restarting the app loses in-memory task continuation.
+The extension popup shows connection status. Use **Pause** and **Resume** in the app or the existing keyboard shortcut. Task context is retained for up to five minutes while the process stays running; restarting the app loses in-memory task continuation. Keep the browser visible during native input.
+
+Use **Disconnect browsers** in the app to disable automatic connection and revoke existing browser connections. **Enable automatic connection** permits them again. A connected browser is selected automatically; a selector appears if multiple browser profiles are available.
 
 ## Saved credentials and data
 
-Settings supports CAMS email, Karvy username/password and report extraction passwords. Choose a credential profile only for the relevant task. Blank fields keep saved values; **Clear saved values** removes them. Website login and permission requirements still apply. Review task wording carefully: tasks can request report submission.
+Settings supports CAMS email, Karvy username/password and report extraction passwords. Saved-password entry is disabled until you explicitly approve it in Settings and save. Uncheck the approval and save to revoke it. Revoking during a task also pauses native input; resume explicitly if you want to continue other work. The extension checks current approval before each password operation. Choose a credential profile only for the relevant task. Blank fields keep saved values; **Clear saved values** removes them. Website login and permission requirements still apply. Review task wording carefully: tasks can request report submission.
 
 Settings are encrypted locally, with a Windows DPAPI-protected encryption key on Windows. The settings API returns configuration status rather than saved secrets. This does not protect against malware running as your user.
 

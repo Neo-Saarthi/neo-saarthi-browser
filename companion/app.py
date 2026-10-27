@@ -13,11 +13,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from companion import runtime
+from companion.native_bridge import TOKEN as NATIVE_TOKEN
 from api.routers.browser_use import router
 from core.browser_use.broker import BrowserJob, BrowserUseError, browser_use_broker
 from core.browser_use.cursor import browser_cursor
 from core.jev.logger import redact_sensitive
-from db.local_store.workspace_db import initialize_database
+from db.local_store.workspace_db import connect, initialize_database
 from services.jev_service import run_jev_task
 from schemas.browser_use import BrowserDesktopActionInput
 
@@ -72,7 +73,10 @@ async def local_access(request: Request, call_next: Any) -> Response:
     else:
         if bridge or (origin and origin != "http://127.0.0.1:8000") or request.headers.get("sec-fetch-site") == "cross-site":
             return JSONResponse({"detail": "Same-device UI access required."}, status_code=403)
-        if path.startswith("/api/") and path != "/api/companion/session":
+        if path == "/api/companion/native":
+            if origin or not secrets.compare_digest(request.headers.get("x-neo-native", ""), NATIVE_TOKEN):
+                return JSONResponse({"detail": "Native host authentication required."}, status_code=403)
+        elif path.startswith("/api/") and path != "/api/companion/session":
             if not secrets.compare_digest(request.headers.get("x-companion-session", ""), runtime.SESSION):
                 return JSONResponse({"detail": "Open the local companion page first."}, status_code=401)
     if request.method in {"POST", "PUT", "PATCH"}:
@@ -113,7 +117,7 @@ def scrub(value: Any) -> Any:
     text = json.dumps(value, default=str)
     values = {**runtime.read_settings(), "environment_api_key": os.environ.get("OPENCODE_API_KEY", "")}
     for key, secret in values.items():
-        if secret and ("password" in key or "api_key" in key):
+        if secret and key in {"karvy_password", "report_password", "opencode_api_key", "environment_api_key"}:
             text = text.replace(json.dumps(secret)[1:-1], "[redacted]")
     return json.loads(redact_sensitive(text))
 
@@ -125,16 +129,73 @@ async def status() -> Dict[str, Any]:
 
 class SettingsInput(BaseModel):
     values: Dict[str, str]
+    password_entry_allowed: Optional[bool] = None
 
 
 @app.put("/api/companion/settings")
 async def settings(body: SettingsInput) -> Dict[str, Any]:
-    if any(not worker.done() for worker in WORKERS.values()):
+    active = any(not worker.done() for worker in WORKERS.values())
+    if active and (body.values or body.password_entry_allowed is not False):
         raise HTTPException(409, "Wait until the task finishes before changing credentials.")
     try:
-        return runtime.save_settings(body.values)
+        if set(body.values) & {"saved_password_entry", "browser_auto_connect"}:
+            raise ValueError("Use the explicit consent and connection controls.")
+        updates = dict(body.values)
+        if body.password_entry_allowed is not None:
+            if active and not body.password_entry_allowed:
+                await asyncio.to_thread(browser_cursor.set_paused, True)
+            updates["saved_password_entry"] = "enabled" if body.password_entry_allowed else "disabled"
+        return runtime.save_settings(updates)
     except ValueError as error:
         raise HTTPException(400, str(error)) from None
+
+
+class NativeInput(BaseModel):
+    v: Literal[1]
+    op: Literal["connect", "status"]
+    nonce: str = Field(pattern=r"^[a-f0-9-]{36}$")
+    client_id: Optional[str] = Field(default=None, pattern=r"^[a-f0-9-]{36}$")
+    browser_family: Optional[Literal["chrome", "edge", "chromium", "brave", "opera", "vivaldi"]] = None
+
+    model_config = {"extra": "forbid"}
+
+
+@app.post("/api/companion/native")
+async def native_connection(body: NativeInput) -> Dict[str, Any]:
+    settings = runtime.settings_status()
+    response: Dict[str, Any] = {"nonce": body.nonce, "secret_entry_enabled": settings["password_entry_enabled"]}
+    if body.op == "connect":
+        if not settings["auto_connect_enabled"]:
+            raise HTTPException(403, "Automatic connection disabled.")
+        if not body.client_id or not body.browser_family:
+            raise HTTPException(400, "Browser identity required.")
+        try:
+            response["connection"] = await browser_use_broker.connect_client(runtime.OWNER, body.client_id, body.browser_family.capitalize(), body.browser_family)
+        except BrowserUseError:
+            raise HTTPException(403, "Browser connection revoked.") from None
+    return response
+
+
+class ConnectionInput(BaseModel):
+    enabled: bool
+
+
+@app.post("/api/companion/connection")
+async def automatic_connection(body: ConnectionInput) -> Dict[str, Any]:
+    if WORKERS:
+        raise HTTPException(409, "Wait until the active task finishes before disconnecting browsers.")
+    runtime.save_settings({"browser_auto_connect": "enabled" if body.enabled else "disabled"})
+    if not body.enabled:
+        for client_id in list(browser_use_broker._tokens_by_distributor.get(runtime.OWNER, {})):
+            await browser_use_broker.revoke_connection(runtime.OWNER, client_id)
+    else:
+        database = connect()
+        try:
+            database.execute("UPDATE browser_use_clients SET status = 'active', last_seen_at = '1970-01-01T00:00:00+00:00' WHERE distributor_id = ? AND status = 'revoked'", (runtime.OWNER,))
+            database.commit()
+        finally:
+            database.close()
+    return runtime.settings_status()
 
 
 class TaskInput(BaseModel):
@@ -171,6 +232,8 @@ async def start_task(body: TaskInput) -> Dict[str, str]:
         raise HTTPException(409, "A task is already running. Resume it or wait until it finishes.")
     if browser_cursor.paused.is_set():
         raise HTTPException(409, "Resume browser input before starting a task.")
+    if body.credential_profile != "none" and not runtime.settings_status()["password_entry_enabled"]:
+        raise HTTPException(409, "Approve saved-password entry in Settings before using this credential profile.")
     if not runtime.settings_status()["model_key_available"]:
         raise HTTPException(409, "Add your OpenCode API key in Settings first.")
     try:
@@ -194,10 +257,10 @@ class ControlInput(BaseModel):
 async def control(body: ControlInput) -> Dict[str, bool]:
     token = browser_use_broker._tokens_by_distributor.get(runtime.OWNER, {}).get(body.client_id)
     if not token:
-        raise HTTPException(409, "Browser is disconnected. Pair it again.")
+        raise HTTPException(409, "Browser is disconnected. Enable automatic connection and keep the extension enabled.")
     connection = await browser_use_broker._connection_for_token(token)
-    if connection.paused:
-        raise HTTPException(409, "This browser was paused in the extension. Resume it from the extension popup first.")
+    if connection.paused and not body.paused:
+        await browser_use_broker.connection_control(token, False)
     try:
         await asyncio.to_thread(browser_cursor.set_paused, body.paused)
         if body.paused:

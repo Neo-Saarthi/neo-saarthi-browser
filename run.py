@@ -4,6 +4,7 @@ import sys
 from typing import List
 
 from companion import runtime
+from companion.native_bridge import register_host
 import uvicorn
 
 from companion.app import app
@@ -24,6 +25,7 @@ async def main() -> None:
             listener.listen(128)
             listener.setblocking(False)
             sockets.append(listener)
+        register_host()
         print(f"Browser companion: http://127.0.0.1:8000\nExtension bridge: http://127.0.0.1:41691\nLocal data: {runtime.DATA}", flush=True)
         servers = [uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", access_log=False)) for port in (8000, 41691)]
         await asyncio.gather(*(server.serve(sockets=[listener]) for server, listener in zip(servers, sockets)))

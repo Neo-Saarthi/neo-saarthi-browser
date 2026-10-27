@@ -48,7 +48,7 @@ class SaarthiRecipeBrowser(BridgeBrowser):
             if "secret_entry_enabled" not in info:
                 raise SecretEntryError("preflight", "extension_update_required")
             if info["secret_entry_enabled"] is not True:
-                raise SecretEntryError("preflight", "consent_required; enable Allow saved-password entry for requested CAMS/KFintech tasks in the extension popup")
+                raise SecretEntryError("preflight", "consent_required; approve saved-password entry in Neo Saarthi Browser Settings")
         self._secret_stage("preflight", check)
 
     def _ensure_secret_allowed(self) -> None:
